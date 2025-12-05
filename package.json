@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://hzaid01.github.io/Chess-MadeWithTheHelpOfAI-Gemini-3-pro",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
