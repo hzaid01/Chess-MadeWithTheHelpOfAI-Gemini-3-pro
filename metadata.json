@@ -1,0 +1,5 @@
+{
+  "name": "Zenith Chess AI",
+  "description": "A high-performance chess application featuring an 'unbeatable' AI opponent powered by Google's Gemini 3 Pro model.",
+  "requestFramePermissions": []
+}
