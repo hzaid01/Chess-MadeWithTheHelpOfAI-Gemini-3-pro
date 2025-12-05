@@ -29,6 +29,17 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Show Node / npm versions
+        run: |
+          node -v
+          npm -v
+
+      - name: List repository and dist contents
+        run: |
+          pwd
+          ls -la
+          if [ -d ./dist ]; then ls -la ./dist; else echo "dist directory not found"; fi
+
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v1
         with:
