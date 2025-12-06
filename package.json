@@ -3,15 +3,18 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://hzaid01.github.io/Chess-MadeWithTheHelpOfAI-Gemini-3-pro",
+  "homepage": "https://hzaid01.github.io/Chess-MadeWithTheHelpOfAI-Gemini-3-pro/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@google/genai": "^1.31.0",
     "chess.js": "^1.4.0",
+    "gh-pages": "^6.3.0",
     "lucide-react": "^0.555.0",
     "react": "^18.3.1",
     "react-chessboard": "^4.7.2",
