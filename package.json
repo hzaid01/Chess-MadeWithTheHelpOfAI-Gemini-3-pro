@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "postbuild": "node scripts/copy404.js",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
