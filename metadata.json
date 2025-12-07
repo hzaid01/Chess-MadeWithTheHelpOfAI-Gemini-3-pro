@@ -1,5 +1,5 @@
 {
   "name": "Zenith Chess AI",
-  "description": "A high-performance chess application featuring an 'unbeatable' AI opponent powered by Google's Gemini 3 Pro model.",
+  "description": "A high-performance chess application featuring a powerful AI opponent powered by Stockfish 16 chess engine (~3200 ELO).",
   "requestFramePermissions": []
 }

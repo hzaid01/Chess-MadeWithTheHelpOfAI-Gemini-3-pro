@@ -3,7 +3,7 @@ import { ChessGame } from './components/ChessBoard';
 import { Bot } from 'lucide-react';
 
 function App() {
-  const [engineMode, setEngineMode] = React.useState<'gemini' | 'enit'>('gemini');
+  const [engineMode, setEngineMode] = React.useState<'stockfish' | 'enit'>('stockfish');
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
@@ -19,16 +19,16 @@ function App() {
                 Zenith Chess
               </h1>
               <p className="hidden sm:block text-xs text-slate-400 font-medium tracking-wide">
-                POWERED BY GEMINI 3 PRO
+                POWERED BY STOCKFISH ENGINE
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1 mr-4">
             <button
-              onClick={() => setEngineMode('gemini')}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${engineMode === 'gemini' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'}`}
+              onClick={() => setEngineMode('stockfish')}
+              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${engineMode === 'stockfish' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'}`}
             >
-              Gemini
+              Stockfish
             </button>
             <button
               onClick={() => setEngineMode('enit')}
@@ -39,11 +39,11 @@ function App() {
           </div>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${engineMode === 'gemini' ? 'bg-red-400' : 'bg-blue-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${engineMode === 'gemini' ? 'bg-red-500' : 'bg-blue-500'}`}></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${engineMode === 'stockfish' ? 'bg-green-400' : 'bg-blue-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${engineMode === 'stockfish' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
             </span>
             <span className="text-slate-400 text-xs sm:text-sm font-medium tracking-wide uppercase">
-              {engineMode === 'gemini' ? 'Impossible Mode' : 'Engine Mode'}
+              {engineMode === 'stockfish' ? '~3200 ELO' : 'Engine Mode'}
             </span>
           </div>
         </div>
@@ -56,7 +56,7 @@ function App() {
 
       {/* Footer */}
       <footer className="py-4 sm:py-6 text-center text-slate-600 text-xs sm:text-sm border-t border-slate-800/50 mt-auto">
-        <p>Built with React, TypeScript & Gemini API</p>
+        <p>Built with React, TypeScript & Stockfish Engine</p>
       </footer>
     </div>
   );

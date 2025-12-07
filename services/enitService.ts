@@ -161,7 +161,7 @@ export const getBestMoveEnit = async (fen: string, depth: number = 3): Promise<E
     const endTime = performance.now();
     const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
 
-    // Format reasoning similar to Gemini but from engine stats
+    // Format reasoning with engine stats
     const reasoning = `EnitChess Engine (Depth ${depth}): Evaluated position score ${bestScore}. Calculated in ${timeTaken}s.`;
 
     return {

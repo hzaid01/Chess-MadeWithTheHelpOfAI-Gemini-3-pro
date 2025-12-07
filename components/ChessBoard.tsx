@@ -2,14 +2,14 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Chess, Move } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { GameStatus } from '../types';
-import { getBestChessMove } from '../services/geminiService';
+import { getBestChessMove } from '../services/stockfishService';
 import { getBestMoveEnit } from '../services/enitService';
 import { MoveHistory } from './MoveHistory';
 import { CapturedPieces } from './CapturedPieces';
 import { BrainCircuit, RefreshCw, RotateCcw, Cpu, ArrowLeftRight } from 'lucide-react';
 
 interface ChessGameProps {
-  engineMode: 'gemini' | 'enit';
+  engineMode: 'stockfish' | 'enit';
 }
 
 export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
@@ -330,8 +330,7 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
       console.log('[AI Effect] Starting AI turn...');
       const playAiTurn = async () => {
         setAiThinking(true);
-        // Small delay for natural feel, reduced if we suspect offline/fallback
-        await new Promise(r => setTimeout(r, 600));
+        // No artificial delay - Stockfish calculates instantly
 
         try {
           const legalMoves = game.moves();
@@ -346,14 +345,14 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
 
           let bestMove, reasoning;
 
-          if (engineMode === 'enit') {
-            // EnitChess Mode (Local)
-            const response = await getBestMoveEnit(currentFen, 4); // Depth 4 as hard/default
+          if (engineMode === 'stockfish') {
+            // Stockfish Mode (Maximum strength ~3200 ELO)
+            const response = await getBestChessMove(currentFen, legalMoves, game.turn());
             bestMove = response.bestMove;
             reasoning = response.reasoning;
           } else {
-            // Gemini Mode (Cloud)
-            const response = await getBestChessMove(currentFen, legalMoves, pgn, game.turn());
+            // EnitChess Mode (Local minimax)
+            const response = await getBestMoveEnit(currentFen, 4);
             bestMove = response.bestMove;
             reasoning = response.reasoning;
           }
