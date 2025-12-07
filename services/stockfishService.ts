@@ -267,3 +267,46 @@ export const getBestChessMove = async (
 
 // Pre-initialize engine
 stockfishService.init().catch(err => console.warn('[Stockfish] Pre-init failed:', err));
+
+/**
+ * Get a quick position evaluation (for move quality analysis)
+ */
+export const evaluatePosition = async (fen: string): Promise<number> => {
+    try {
+        const response = await stockfishService.getBestMove(fen);
+        return response.score ?? 0;
+    } catch {
+        return 0;
+    }
+};
+
+/**
+ * Determine move quality based on centipawn loss
+ * @param evalBefore - Evaluation before the move (from mover's perspective)
+ * @param evalAfter - Evaluation after the move (from mover's perspective)
+ * @param isPlayerMove - Whether this was the human player's move
+ */
+export type MoveQuality = 'brilliant' | 'great' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'book' | null;
+
+export const getMoveRating = (evalBefore: number, evalAfter: number, isPlayerMove: boolean): MoveQuality => {
+    // For player moves, we measure how much evaluation changed in their favor
+    // Positive change is good, negative change is bad
+    const evalChange = evalAfter - evalBefore;
+
+    // For AI moves, they should always be optimal, so we don't rate them harshly
+    if (!isPlayerMove) {
+        // AI moves are typically good/great
+        if (evalChange >= 50) return 'great';
+        if (evalChange >= 0) return 'good';
+        return null; // Don't show negatives for AI
+    }
+
+    // Rating thresholds (in centipawns)
+    // These match chess.com style ratings
+    if (evalChange >= 100) return 'brilliant';  // +1 pawn or better (rare, usually means found a tactic)
+    if (evalChange >= 30) return 'great';       // +0.3 pawns (strong move)
+    if (evalChange >= -10) return 'good';       // Maintained position (within 0.1 pawns)
+    if (evalChange >= -50) return 'inaccuracy'; // Lost 0.1-0.5 pawns
+    if (evalChange >= -150) return 'mistake';   // Lost 0.5-1.5 pawns
+    return 'blunder';                           // Lost more than 1.5 pawns
+};

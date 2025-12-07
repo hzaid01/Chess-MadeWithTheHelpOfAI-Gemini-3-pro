@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Chess, Move } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { GameStatus } from '../types';
-import { getBestChessMove } from '../services/stockfishService';
+import { getBestChessMove, evaluatePosition, getMoveRating, MoveQuality } from '../services/stockfishService';
 import { getBestMoveEnit } from '../services/enitService';
-import { MoveHistory } from './MoveHistory';
+import { MoveHistory, MoveRating } from './MoveHistory';
 import { CapturedPieces } from './CapturedPieces';
 import { BrainCircuit, RefreshCw, RotateCcw, Cpu, ArrowLeftRight } from 'lucide-react';
 
@@ -29,6 +29,10 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
   const [lastMoveSquares, setLastMoveSquares] = useState<Record<string, any>>({});
   const [checkSquare, setCheckSquare] = useState<Record<string, any>>({});
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+
+  // Move accuracy tracking
+  const [moveRatings, setMoveRatings] = useState<MoveRating[]>([]);
+  const lastEvalRef = useRef<number>(0); // Track evaluation for rating moves
 
   // Sounds
   const moveSound = useMemo(() => new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_common/move-self.mp3'), []);
@@ -127,43 +131,43 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
     return false;
   }, [checkSound, captureSound, moveSound, notifySound, userColor]);
 
-  // Handle piece drag start - simplified
+  // Handle piece drag start - show legal move hints while dragging
   const onPieceDragBegin = useCallback((piece: string, sourceSquare: string) => {
-    console.log("Drag started", piece, sourceSquare);
-    // if (gameStatus !== GameStatus.IN_PROGRESS || aiThinking) return;
+    // Only show if it's the player's turn and the piece is theirs
+    if (gameStatus !== GameStatus.IN_PROGRESS || aiThinking) return;
+    const game = gameRef.current;
+    if (!piece || game.turn() !== userColor || piece[0] !== userColor) return;
 
-    // const game = gameRef.current;
+    setSelectedSquare(sourceSquare);
+    const moves = game.moves({ square: sourceSquare as any, verbose: true }) as Move[];
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return;
+    }
 
-    // // Only show options if it's user's turn and piece belongs to user
-    // if (game.turn() !== userColor || !piece || piece[0] !== userColor) return;
+    const newOptionSquares: Record<string, any> = {};
+    moves.forEach((m) => {
+      const isCapture = (m.flags || '').includes('c') || !!game.get(m.to as any);
+      newOptionSquares[m.to] = isCapture
+        ? {
+          background:
+            'radial-gradient(circle at center, rgba(255,0,0,0) 56%, rgba(255,0,0,0.85) 57%, rgba(255,0,0,0) 60%)',
+          borderRadius: '50%',
+        }
+        : {
+          background:
+            'radial-gradient(circle at center, rgba(0,0,0,0.35) 18%, rgba(0,0,0,0) 19%)',
+          borderRadius: '50%',
+        };
+    });
 
-    // // Get all legal moves for this piece (like SwiftUI's getDropLegalState)
-    // const moves = game.moves({ square: sourceSquare as any, verbose: true }) as Move[];
-    // if (moves.length === 0) {
-    //   setOptionSquares({});
-    //   return;
-    // }
+    newOptionSquares[sourceSquare] = {
+      boxShadow: 'inset 0 0 0 3px rgba(102,102,255,0.9)',
+      background: 'rgba(255, 255, 0, 0.18)',
+    };
 
-    // const sourcePiece = game.get(sourceSquare as any);
-    // const newOptionSquares: Record<string, any> = {};
-
-    // // Mark all legal drop targets (like SwiftUI's green border for accepted drops)
-    // moves.forEach((move) => {
-    //   const targetPiece = game.get(move.to as any);
-    //   newOptionSquares[move.to] = {
-    //     background: targetPiece && targetPiece.color !== sourcePiece?.color
-    //       ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // Capture indicator
-    //       : 'radial-gradient(circle, rgba(0,0,0,.2) 25%, transparent 25%)', // Regular move indicator
-    //     borderRadius: '50%',
-    //   };
-    // });
-
-    // newOptionSquares[sourceSquare] = {
-    //   background: 'rgba(255, 255, 0, 0.4)',
-    // };
-
-    // setOptionSquares(newOptionSquares);
-  }, []);
+    setOptionSquares(newOptionSquares);
+  }, [aiThinking, gameStatus, userColor]);
 
   // Handle drag end - clear option squares
   const onPieceDragEnd = useCallback(() => {
@@ -188,6 +192,9 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
 
     console.log(`Attempting drop: ${sourceSquare} -> ${targetSquare} (${piece})`);
     console.log(`Current Turn: ${game.turn()} | User Color: ${userColor}`);
+
+    // Store evaluation before move for rating
+    const evalBefore = lastEvalRef.current;
 
     // Try to make the move
     // Note: react-chessboard calls onPieceDrop(source, target, piece)
@@ -248,8 +255,29 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
     setOptionSquares({});
     setSelectedSquare(null);
 
+    // Evaluate move quality asynchronously (don't block the UI)
+    const isPlayerMove = piece[0] === userColor;
+    if (isPlayerMove && engineMode === 'stockfish') {
+      // Async evaluation - add rating after calculation
+      evaluatePosition(game.fen()).then((evalAfter) => {
+        // Flip eval for black's perspective
+        const normalizedBefore = userColor === 'w' ? evalBefore : -evalBefore;
+        const normalizedAfter = userColor === 'w' ? evalAfter : -evalAfter;
+        const rating = getMoveRating(normalizedBefore, normalizedAfter, true);
+
+        lastEvalRef.current = evalAfter;
+        setMoveRatings(prev => [...prev, rating]);
+      }).catch(() => {
+        // If evaluation fails, just add null rating
+        setMoveRatings(prev => [...prev, null]);
+      });
+    } else {
+      // For non-stockfish or AI moves during player turn, add null
+      setMoveRatings(prev => [...prev, null]);
+    }
+
     return true;
-  }, [gameStatus, aiThinking, checkSound, captureSound, moveSound, notifySound]);
+  }, [gameStatus, aiThinking, userColor, engineMode, checkSound, captureSound, moveSound, notifySound]);
 
   // Click-to-move handler for better mobile support (unchanged)
   const onSquareClick = (square: string) => {
@@ -304,18 +332,28 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
     }
 
     const newOptionSquares: Record<string, any> = {};
+
     moves.forEach((move) => {
-      newOptionSquares[move.to] = {
-        background:
-          game.get(move.to as any) && game.get(move.to as any).color !== game.get(sourceSquare as any).color
-            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
-            : 'radial-gradient(circle, rgba(0,0,0,.2) 25%, transparent 25%)',
-        borderRadius: '50%',
-      };
+      const isCapture = (move.flags || '').includes('c') || !!game.get(move.to as any);
+      newOptionSquares[move.to] = isCapture
+        ? {
+          // Capture: red ring
+          background:
+            'radial-gradient(circle at center, rgba(255,0,0,0) 56%, rgba(255,0,0,0.85) 57%, rgba(255,0,0,0) 60%)',
+          borderRadius: '50%',
+        }
+        : {
+          // Quiet: dark dot
+          background:
+            'radial-gradient(circle at center, rgba(0,0,0,0.35) 18%, rgba(0,0,0,0) 19%)',
+          borderRadius: '50%',
+        };
     });
 
     newOptionSquares[sourceSquare] = {
-      background: 'rgba(255, 255, 0, 0.4)',
+      // Selected square highlight
+      boxShadow: 'inset 0 0 0 3px rgba(102,102,255,0.9)',
+      background: 'rgba(255, 255, 0, 0.18)',
     };
 
     setOptionSquares(newOptionSquares);
@@ -343,13 +381,14 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
             return;
           }
 
-          let bestMove, reasoning;
+          let bestMove, reasoning, evalScore;
 
           if (engineMode === 'stockfish') {
             // Stockfish Mode (Maximum strength ~3200 ELO)
             const response = await getBestChessMove(currentFen, legalMoves, game.turn());
             bestMove = response.bestMove;
             reasoning = response.reasoning;
+            evalScore = response.score;
           } else {
             // EnitChess Mode (Local minimax)
             const response = await getBestMoveEnit(currentFen, 4);
@@ -361,11 +400,19 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
 
           const success = makeMove(bestMove);
 
-          if (!success) {
+          if (success) {
+            // Update evaluation reference for next move rating
+            if (evalScore !== undefined) {
+              lastEvalRef.current = evalScore;
+            }
+            // Add AI move rating (AI moves are typically 'good' or better)
+            setMoveRatings(prev => [...prev, 'good']);
+          } else {
             console.warn("AI Best Move failed validation, using fallback");
             const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
             makeMove(randomMove);
             setAiReasoning("Recalculating tactical fallback...");
+            setMoveRatings(prev => [...prev, null]);
           }
 
         } catch (error) {
@@ -374,6 +421,7 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
           if (legalMoves.length > 0) {
             const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
             makeMove(randomMove);
+            setMoveRatings(prev => [...prev, null]);
           }
         } finally {
           setAiThinking(false);
@@ -403,6 +451,8 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
     setCheckSquare({});
     setOptionSquares({});
     setSelectedSquare(null);
+    setMoveRatings([]);
+    lastEvalRef.current = 0;
   };
 
   const swapSides = () => {
@@ -477,6 +527,11 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
             boardOrientation={userColor === 'w' ? 'white' : 'black'}
             customDarkSquareStyle={{ backgroundColor: '#334155' }}
             customLightSquareStyle={{ backgroundColor: '#94a3b8' }}
+            customSquareStyles={{
+              ...optionSquares,
+              ...lastMoveSquares,
+              ...checkSquare,
+            }}
             animationDuration={300}
             arePiecesDraggable={true}
           />
@@ -571,7 +626,7 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
 
         {/* History */}
         <div className="flex-1 overflow-hidden h-[300px] lg:h-auto lg:min-h-[400px] bg-slate-800 rounded-xl border border-slate-700 shadow-lg mb-8 lg:mb-0">
-          <MoveHistory history={history} />
+          <MoveHistory history={history} moveRatings={moveRatings} />
         </div>
       </div>
     </div>
