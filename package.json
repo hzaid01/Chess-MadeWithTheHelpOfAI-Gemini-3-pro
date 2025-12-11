@@ -7,12 +7,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:android": "cross-env CAPACITOR_BUILD=true vite build && npx cap sync android",
     "preview": "vite preview",
     "postbuild": "node scripts/copy404.js",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "chess.js": "^1.4.0",
@@ -26,6 +28,7 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.22",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.8.2",
