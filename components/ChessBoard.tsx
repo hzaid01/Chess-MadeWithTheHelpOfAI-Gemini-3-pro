@@ -485,39 +485,49 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
   const capturedBlack = historyVerbose.filter(m => m.color === 'b' && m.captured).map(m => m.captured as string);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto w-full px-2 sm:px-4">
-      {/* Left Column: Board Area */}
-      <div className="flex-1 flex flex-col items-center gap-4 w-full">
-
-        {/* Opponent (AI) */}
-        <div className="w-full flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-700 to-indigo-900 rounded-full flex items-center justify-center relative overflow-hidden shadow-lg border-2 border-purple-500/30 ${aiThinking ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-slate-800' : ''}`}>
-              <Cpu size={20} className="text-white z-10" />
-              {aiThinking && <div className="absolute inset-0 bg-purple-400 opacity-30 animate-ping"></div>}
+    <div className="flex flex-col gap-4 w-full">
+      {/* Opponent (AI) Player Card */}
+      <div className="bg-zenith-card border border-zenith-border rounded-2xl p-3 flex items-center justify-between shadow-lg shadow-black/20">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className={`bg-gradient-to-br from-purple-700 to-indigo-900 rounded-xl h-12 w-12 border border-zenith-border shadow-inner flex items-center justify-center ${aiThinking ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-zenith-card' : ''}`}>
+              <Cpu size={22} className="text-white" />
+              {aiThinking && <div className="absolute inset-0 bg-purple-400 opacity-30 animate-ping rounded-xl"></div>}
             </div>
-            <div>
-              <h2 className="font-bold text-slate-100 flex flex-wrap items-center gap-2 text-sm sm:text-lg">
-                Zenith AI
-                <span className="text-[10px] bg-red-500/20 text-red-200 px-2 py-0.5 rounded border border-red-500/50 font-bold tracking-wider shadow-[0_0_10px_rgba(239,68,68,0.3)]">UNBEATABLE</span>
-              </h2>
-              <div className="flex items-center gap-2">
-                {aiThinking ? (
-                  <><span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span><p className="text-xs text-slate-400">Thinking...</p></>
-                ) : (
-                  <><span className="w-2 h-2 rounded-full bg-slate-600"></span><p className="text-xs text-slate-400">Waiting</p></>
-                )}
-              </div>
+            <div className="absolute -bottom-1 -right-1 bg-zenith-bg rounded-full p-0.5 border border-zenith-border">
+              <span className="material-symbols-outlined text-zenith-primary text-[10px]">smart_toy</span>
             </div>
           </div>
-          {/* Show pieces captured by AI (User's pieces) */}
-          <CapturedPieces pieces={userColor === 'w' ? capturedWhite : capturedBlack} color={userColor} />
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <p className="text-white text-sm font-bold">Zenith AI</p>
+              <span className="bg-red-500/20 text-red-200 text-[8px] font-bold px-1.5 py-0.5 rounded border border-red-500/50 uppercase tracking-wider">
+                {engineMode === 'stockfish' ? '~3200' : 'Enit'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-gray-500 text-xs font-mono">
+                {aiThinking ? 'Thinking...' : 'Waiting'}
+              </p>
+              <CapturedPieces pieces={userColor === 'w' ? capturedWhite : capturedBlack} color={userColor} />
+            </div>
+          </div>
         </div>
+        <div className="bg-zenith-bg px-4 py-2 rounded-lg border border-zenith-border flex items-center gap-2">
+          <span className="material-symbols-outlined text-gray-600 text-sm">timer</span>
+          <p className="text-gray-400 text-lg font-mono font-bold tracking-widest opacity-80">--:--</p>
+        </div>
+      </div>
 
-        {/* Board */}
-        <div
-          className="relative w-full max-w-[600px] aspect-square shadow-[0_0_50px_rgba(0,0,0,0.6)] rounded-lg overflow-hidden border-4 border-slate-700 bg-slate-900 mx-auto"
-        >
+      {/* Chess Board */}
+      <div className="w-full aspect-square bg-zenith-card rounded-xl p-1 shadow-2xl shadow-zenith-bg border border-zenith-border relative select-none">
+        <div className="absolute left-1.5 top-1.5 text-[0.6rem] text-gray-600 font-bold z-10 pointer-events-none">
+          {userColor === 'w' ? '8' : '1'}
+        </div>
+        <div className="absolute right-1.5 bottom-0.5 text-[0.6rem] text-gray-600 font-bold z-10 pointer-events-none">
+          {userColor === 'w' ? 'H' : 'A'}
+        </div>
+        <div className="h-full w-full rounded-lg overflow-hidden border border-gray-700/30">
           <Chessboard
             position={fen}
             onPieceDrop={onDrop}
@@ -525,8 +535,8 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
             onPieceDragEnd={onPieceDragEnd}
             onSquareClick={onSquareClick}
             boardOrientation={userColor === 'w' ? 'white' : 'black'}
-            customDarkSquareStyle={{ backgroundColor: '#334155' }}
-            customLightSquareStyle={{ backgroundColor: '#94a3b8' }}
+            customDarkSquareStyle={{ backgroundColor: '#475569' }}
+            customLightSquareStyle={{ backgroundColor: '#cbd5e1' }}
             customSquareStyles={{
               ...optionSquares,
               ...lastMoveSquares,
@@ -535,99 +545,128 @@ export const ChessGame: React.FC<ChessGameProps> = ({ engineMode }) => {
             animationDuration={300}
             arePiecesDraggable={true}
           />
-
-          {/* Game Over Overlay */}
-          {gameStatus !== GameStatus.IN_PROGRESS && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-500 animate-in fade-in p-4">
-              <div className="bg-slate-900/95 p-6 sm:p-8 rounded-2xl shadow-2xl border border-purple-500/30 text-center transform scale-100 max-w-sm w-full">
-                <h2 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight uppercase drop-shadow-lg">Game Over</h2>
-                <p className="text-lg sm:text-xl text-purple-300 mb-8 font-medium">{gameOutcomeMessage}</p>
-                <button
-                  onClick={resetGame}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:shadow-purple-500/60 flex items-center justify-center gap-2 active:scale-95"
-                >
-                  <RefreshCw size={20} /> Play Again
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Player Info (Human) */}
-        <div className="w-full flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-700 rounded-full flex items-center justify-center shadow-inner border border-slate-600 relative">
-              <span className="font-bold text-white text-[10px] sm:text-xs">YOU</span>
-              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 flex items-center justify-center ${userColor === 'w' ? 'bg-slate-100 text-slate-900' : 'bg-slate-900 text-white'}`}>
-                <span className="text-[8px] font-bold">{userColor === 'w' ? 'W' : 'B'}</span>
-              </div>
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-100 text-sm sm:text-lg">Challenger</h2>
-              <p className={`text-xs ${gameRef.current.turn() === userColor ? 'text-green-400 font-bold' : 'text-slate-500'}`}>
-                {gameRef.current.turn() === userColor ? 'Your turn' : '...'}
-              </p>
+        {/* Game Over Overlay */}
+        {gameStatus !== GameStatus.IN_PROGRESS && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-500 animate-in fade-in p-4 rounded-xl">
+            <div className="bg-zenith-card p-6 sm:p-8 rounded-2xl shadow-2xl border border-zenith-primary/30 text-center transform scale-100 max-w-sm w-full">
+              <h2 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight uppercase drop-shadow-lg">Game Over</h2>
+              <p className="text-lg sm:text-xl text-zenith-accent mb-8 font-medium">{gameOutcomeMessage}</p>
+              <button
+                onClick={resetGame}
+                className="w-full bg-gradient-to-r from-zenith-primary to-indigo-600 hover:from-zenith-accent hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-glow hover:shadow-zenith-primary/60 flex items-center justify-center gap-2 active:scale-95"
+              >
+                <RefreshCw size={20} /> Play Again
+              </button>
             </div>
           </div>
-          {/* Show pieces captured by Human (AI's pieces) */}
-          <CapturedPieces pieces={userColor === 'w' ? capturedBlack : capturedWhite} color={userColor === 'w' ? 'b' : 'w'} />
-        </div>
-
-        {/* Controls */}
-        <div className="flex gap-3 w-full justify-center mt-2 mb-4 lg:mb-0">
-          <button
-            onClick={resetGame}
-            disabled={aiThinking}
-            className="flex items-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-slate-200 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed active:bg-slate-900 shadow-sm text-sm"
-          >
-            <RefreshCw size={18} /> New Game
-          </button>
-          <button
-            onClick={undoMove}
-            disabled={aiThinking || history.length === 0 || gameStatus !== GameStatus.IN_PROGRESS}
-            className="flex items-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-slate-200 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed active:bg-slate-900 shadow-sm text-sm"
-          >
-            <RotateCcw size={18} /> Undo
-          </button>
-          <button
-            onClick={swapSides}
-            disabled={aiThinking || gameStatus !== GameStatus.IN_PROGRESS}
-            className="flex items-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-slate-200 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed active:bg-slate-900 shadow-sm text-sm"
-            title="Swap Sides (AI will move immediately if it becomes its turn)"
-          >
-            <ArrowLeftRight size={18} /> Swap
-          </button>
-        </div>
-
+        )}
       </div>
 
-      {/* Right Column: Info Panel */}
-      <div className="w-full lg:w-80 flex flex-col gap-4">
-        {/* AI Thought Process */}
-        <div className="bg-slate-800 rounded-xl p-5 shadow-xl border border-slate-700 flex-shrink-0 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <BrainCircuit size={80} className="text-purple-500" />
+      {/* Player (Human) Card */}
+      <div className="bg-zenith-card border border-zenith-border rounded-2xl p-3 flex items-center justify-between shadow-glow ring-1 ring-zenith-primary/20">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="bg-slate-700 rounded-xl h-12 w-12 border-2 border-zenith-primary flex items-center justify-center">
+              <span className="font-bold text-white text-xs">YOU</span>
+            </div>
+            <div className={`absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-zenith-card shadow-[0_0_8px_rgba(99,102,241,0.8)] ${userColor === 'w' ? 'bg-white' : 'bg-gray-800'}`}></div>
           </div>
-          <h3 className="text-sm font-bold text-purple-400 mb-4 flex items-center gap-2 uppercase tracking-wider border-b border-purple-500/20 pb-2">
-            <BrainCircuit size={16} /> Zenith Logic
-          </h3>
-          <div className="text-slate-300 text-sm leading-relaxed max-h-[150px] overflow-y-auto pr-2 custom-scrollbar min-h-[100px]">
-            {aiReasoning ? (
-              <div className="animate-in fade-in duration-500">
-                <p className="italic border-l-2 border-purple-500 pl-3 py-1 bg-purple-500/5 rounded-r">"{aiReasoning}"</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-2">
-                <span className="text-xs uppercase tracking-widest opacity-50">System Standby</span>
-              </div>
-            )}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <p className="text-white text-sm font-bold">Challenger</p>
+              {gameRef.current.turn() === userColor && gameStatus === GameStatus.IN_PROGRESS && (
+                <span className="bg-zenith-primary/10 text-zenith-primary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase border border-zenith-primary/20 tracking-wider">Turn</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-gray-500 text-xs font-mono">Playing as {userColor === 'w' ? 'White' : 'Black'}</p>
+              <CapturedPieces pieces={userColor === 'w' ? capturedBlack : capturedWhite} color={userColor === 'w' ? 'b' : 'w'} />
+            </div>
           </div>
         </div>
+        <div className={`bg-zenith-bg px-4 py-2 rounded-lg border flex items-center gap-2 relative overflow-hidden group ${gameRef.current.turn() === userColor ? 'border-zenith-primary/50 shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'border-zenith-border'}`}>
+          {gameRef.current.turn() === userColor && <div className="absolute inset-0 bg-zenith-primary/5 group-hover:bg-zenith-primary/10 transition-colors"></div>}
+          <span className={`material-symbols-outlined text-sm relative z-10 ${gameRef.current.turn() === userColor ? 'text-zenith-primary' : 'text-gray-600'}`}>timer</span>
+          <p className={`text-lg font-mono font-bold tracking-widest relative z-10 ${gameRef.current.turn() === userColor ? 'text-white' : 'text-gray-400'}`}>--:--</p>
+        </div>
+      </div>
 
-        {/* History */}
-        <div className="flex-1 overflow-hidden h-[300px] lg:h-auto lg:min-h-[400px] bg-slate-800 rounded-xl border border-slate-700 shadow-lg mb-8 lg:mb-0">
-          <MoveHistory history={history} moveRatings={moveRatings} />
+      {/* Move History Panel */}
+      <div className="bg-zenith-card border border-zenith-border rounded-xl p-3 flex flex-col gap-2 shadow-sm">
+        <div className="flex justify-between items-center border-b border-zenith-border pb-2 mb-1">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-gray-500 text-sm">history</span>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Move History</span>
+          </div>
+          <span className="text-[10px] text-gray-600 font-mono">
+            {engineMode === 'stockfish' ? 'Stockfish 17' : 'EnitChess'}
+          </span>
         </div>
+        <div className="flex items-center gap-4 overflow-x-auto pb-1 no-scrollbar text-sm font-mono scroll-smooth">
+          {history.length === 0 ? (
+            <span className="text-gray-600 text-xs">No moves yet</span>
+          ) : (
+            history.reduce((acc: React.ReactNode[], move, index) => {
+              const moveNumber = Math.floor(index / 2) + 1;
+              const isWhiteMove = index % 2 === 0;
+              const isLatest = index === history.length - 1;
+
+              if (isWhiteMove) {
+                acc.push(
+                  <div key={moveNumber} className={`flex-shrink-0 flex items-center gap-2 ${isLatest ? 'bg-zenith-primary/10 px-2 py-0.5 rounded border border-zenith-primary/20' : 'text-gray-500'}`}>
+                    <span className="text-gray-600 w-5">{moveNumber}.</span>
+                    <span className={isLatest ? 'text-white font-bold' : ''}>{move}</span>
+                    {!isLatest && history[index + 1] && <span>{history[index + 1]}</span>}
+                    {isLatest && !history[index + 1] && aiThinking && <span className="animate-pulse text-zenith-primary">...</span>}
+                  </div>
+                );
+              }
+              return acc;
+            }, [])
+          )}
+        </div>
+      </div>
+
+      {/* AI Reasoning Panel */}
+      {aiReasoning && (
+        <div className="bg-zenith-card rounded-xl p-4 shadow-lg border border-zenith-border relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <BrainCircuit size={60} className="text-zenith-primary" />
+          </div>
+          <h3 className="text-xs font-bold text-zenith-accent mb-3 flex items-center gap-2 uppercase tracking-wider border-b border-zenith-primary/20 pb-2">
+            <BrainCircuit size={14} /> Zenith Logic
+          </h3>
+          <div className="text-gray-300 text-sm leading-relaxed max-h-[100px] overflow-y-auto pr-2 custom-scrollbar">
+            <p className="italic border-l-2 border-zenith-primary pl-3 py-1 bg-zenith-primary/5 rounded-r">"{aiReasoning}"</p>
+          </div>
+        </div>
+      )}
+
+      {/* Control Buttons */}
+      <div className="grid grid-cols-3 gap-3 w-full">
+        <button
+          onClick={resetGame}
+          disabled={aiThinking}
+          className="flex items-center justify-center gap-2 py-3 rounded-xl border border-zenith-border bg-zenith-card hover:bg-white/5 text-gray-400 hover:text-white transition-all text-[11px] font-bold uppercase tracking-wide group disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RefreshCw size={16} className="group-hover:scale-110 transition-transform" /> New Game
+        </button>
+        <button
+          onClick={undoMove}
+          disabled={aiThinking || history.length === 0 || gameStatus !== GameStatus.IN_PROGRESS}
+          className="flex items-center justify-center gap-2 py-3 rounded-xl border border-zenith-border bg-zenith-card hover:bg-white/5 text-gray-400 hover:text-white transition-all text-[11px] font-bold uppercase tracking-wide group disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RotateCcw size={16} className="group-hover:-rotate-45 transition-transform" /> Undo
+        </button>
+        <button
+          onClick={swapSides}
+          disabled={aiThinking || gameStatus !== GameStatus.IN_PROGRESS}
+          className="flex items-center justify-center gap-2 py-3 rounded-xl border border-zenith-border bg-zenith-card hover:bg-white/5 text-gray-400 hover:text-white transition-all text-[11px] font-bold uppercase tracking-wide group disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ArrowLeftRight size={16} className="group-hover:rotate-180 transition-transform" /> Swap
+        </button>
       </div>
     </div>
   );
